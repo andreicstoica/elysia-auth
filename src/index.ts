@@ -19,9 +19,9 @@ const users = [
 
 const protectedRoutes = new Elysia()
   .use(jwt({
-    name: 'jwt',
-    secret: 'andrew paris and eugene r my senpais',
-    exp: '1d'
+    name:'jwt',
+    secret: process.env.JWT_SECRET!,
+    exp: '7d'
   }))
 
   .get('/sign/:username', async ({ jwt, params: { username }, cookie: { auth } }) => {
@@ -30,31 +30,35 @@ const protectedRoutes = new Elysia()
     auth.set({
       value,
       httpOnly: true,
-      path: '/profile'
+      path: '/profile',
     })
 
     return `Sign in as ${value}`
   })
 
   .get('/profile', async ({ jwt, status, cookie: { auth } }) => {
-    const profile = await jwt.verify(auth.value)
+    const profile = await jwt.verify(auth.value) // returns null if expired!
 
-    if (!profile) {
-      return status(401)
+    console.log(JSON.stringify(profile));
+
+    if (profile === false) {
+      return status(401, "Unauthorized: Invalid or expired token.")
     }
 
     const foundUser = users.filter((user) => {
       return user.username === profile.username
     })
 
+    if (foundUser.length === 0) {
+      return status(401, "Unauthorized: User not found.")
+    }
+
     if (foundUser[0].role === 'admin') {
       return `Hello ${foundUser[0].username}, an admin!`
     } else {
-      return status(401)
+      return status(401, 'Unauthorized: You are not an admin.')
     }
 })
-
-
 
 const app = new Elysia()
   .use(swagger({

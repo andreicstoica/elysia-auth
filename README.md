@@ -127,18 +127,18 @@ Discuss these security issues:
 
 ### Step 7: Learn About JWTs
 
-- [ ] Read about JWT structure (header.payload.signature)
-- [ ] Understand signing vs verification
-- [ ] Learn about expiry (`exp` claim)
-- [ ] Practice signing and decoding JWTs manually
+- [x] Read about JWT structure (header.payload.signature)
+- [x] Understand signing vs verification
+- [x] Learn about expiry (`exp` claim)
+- [x] Practice signing and decoding JWTs manually
 
 ### Step 8: Implement JWT System
 
-- [ ] Install JWT library (`jsonwebtoken` or `jose`)
-- [ ] Create functions to:
-  - [ ] Sign JWTs with user info and expiration
-  - [ ] Verify and decode JWTs
-  - [ ] Handle expired tokens
+- [x] Install JWT library (`jsonwebtoken` or `jose`)
+- [x] Create functions to:
+  - [x] Sign JWTs with user info and expiration
+  - [x] Verify and decode JWTs
+  - [x] Handle expired tokens
 
 ### Step 9: Create Login Endpoint
 
