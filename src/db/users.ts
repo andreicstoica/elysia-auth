@@ -1,4 +1,11 @@
-export const users = [
+export type User = {
+  id: number;
+  username: string;
+  password?: string; // Or a hash in real app
+  role: 'admin' | 'basic';
+}
+
+export const users: User[] = [
   {
     id: 1,
     username: "andrei",

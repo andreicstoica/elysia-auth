@@ -1,12 +1,13 @@
-import { Elysia, status, t } from "elysia";
+import { type Context, Elysia, status, t } from "elysia";
 import { swagger } from '@elysiajs/swagger'
 import { jwt } from '@elysiajs/jwt'
-
-import { findUser } from './utils/findUser'
 import cors from "@elysiajs/cors";
 import cookie from "@elysiajs/cookie";
 
-const login = new Elysia()
+import { findUser } from './utils/findUser'
+import type { User } from './db/users'
+
+const auth = new Elysia()
   .use(jwt({
     name:'jwt',
     secret: process.env.JWT_SECRET!,
@@ -56,8 +57,51 @@ const login = new Elysia()
     })
   })
 
-  .get('/profile', async ({ jwt, cookie }) => {
-    console.log('protected profile route accessed');
+  .post('/api/logout', ({ cookie }) => {
+    console.log('logout requested')
+    cookie.authToken.remove()
+
+    return 'Logout successful'
+  })
+
+  .onError(({code, error}) => {
+    console.log('ERROR', code, error)
+
+    if (code === 'VALIDATION') {
+      return status(400, 'Validation error: Please check your input')
+    }
+
+    if (code === 'NOT_FOUND') {
+      return status(404, 'Route not found')
+    }
+
+    return status(500, 'Internal server error')
+  })
+
+
+// ------------------------ //
+// --- PROTECTED ROUTES --- //
+// ------------------------ //
+
+interface AuthenticatedContext extends Context {
+  user: User;
+}
+
+const protectedRoutes = new Elysia()
+
+  .use(jwt({
+    name: 'jwt',
+    secret: process.env.JWT_SECRET!,
+  }))
+
+  .use(cookie())
+
+  .decorate('user', null as User | null)
+
+  .onBeforeHandle(async (context) => {
+    console.log(`running auth middleware...`);
+
+    const { jwt, cookie, set } = context as AuthenticatedContext
     const authToken = cookie.authToken.value
     console.log('Auth token received:', authToken ? 'Present' : 'Missing');
 
@@ -78,6 +122,11 @@ const login = new Elysia()
         cookie.authToken.remove()
         return status(401, "Unauthorized: User not found Please log in again.")
       }
+
+      context.user = foundUser;
+
+      (set as any).request.user = foundUser
+
       if (foundUser.role === 'admin') {
         return `Hello ${foundUser.username}, an admin!`
       } 
@@ -88,7 +137,27 @@ const login = new Elysia()
         cookie.authToken.remove()
         return status(401, 'Token verification failed. Please login again.')
       }
-})
+  })
+
+  .get('/profile', ({ user }) => {
+    if (user?.role === 'admin') {
+      return `Hello ${user.username}, an admin! Accessed via protected route`
+    }
+
+    return status(403, 'Forbidden: you are not an admin.')
+  })
+
+  .get('/api/chat', ({ user }) => {
+    return `Hi ${user?.username}, you are at chat endpoint and authenticated`
+  })
+
+  .get('/api/chat/history', ({ user }) => {
+    return `chat history`
+  })
+
+  .delete('/api/chat/history', () => {
+    return `still need to implement chat history deletion lol`
+  })
 
 const app = new Elysia()
   .use(swagger({
@@ -113,9 +182,10 @@ const app = new Elysia()
     sameSite: "lax",
   }))
 
-  app.get('/', () => "hello elysia's world!!!")
+  .get('/', () => "Hello Elysia's world!")
 
-  .use(login)
+  .use(auth)
+  .use(protectedRoutes)
 
   .listen(3000);
     console.log(

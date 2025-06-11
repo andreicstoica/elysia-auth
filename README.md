@@ -142,20 +142,20 @@ Discuss these security issues:
 
 ### Step 9: Create Login Endpoint
 
-- [ ] `POST /api/login` - Takes username/password
-  - [ ] Verify credentials against user list
-  - [ ] Sign JWT with user ID and role
-  - [ ] Set JWT in cookie AND return it in response
-  - [ ] Document in Swagger with examples
+- [x] `POST /api/login` - Takes username/password
+  - [x] Verify credentials against user list
+  - [x] Sign JWT with user ID and role
+  - [x] Set JWT in cookie AND return it in response
+  - [x] Document in Swagger with examples
 
 ### Step 10: Update Authentication Middleware
 
-- [ ] Modify middleware to:
-  - [ ] Extract JWT from Authorization header OR cookie
-  - [ ] Verify JWT signature
-  - [ ] Decode user info from JWT
-  - [ ] Check if user role is "admin"
-  - [ ] Handle expired tokens gracefully
+- [x] Modify middleware to:
+  - [x] Extract JWT from Authorization header OR cookie
+  - [x] Verify JWT signature
+  - [x] Decode user info from JWT
+  - [x] Check if user role is "admin"
+  - [x] Handle expired tokens gracefully
 
 ### Step 11: Add More Protected Endpoints
 
