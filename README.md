@@ -72,20 +72,20 @@ This assignment builds a **single application** that you'll develop incrementall
 
 ### Step 3: Create User System
 
-- [ ] Create an in-memory list of users with different roles:
+- [x] Create an in-memory list of users with different roles:
   ```javascript
   const users = [
     { id: 1, username: "admin", password: "admin123", role: "admin" },
     { id: 2, username: "user", password: "user123", role: "basic" },
   ];
   ```
-- [ ] **Problem**: How do we know which user is making the request to `/api/protected`?
+- [x] **Problem**: How do we know which user is making the request to `/api/protected`?
 
 ### Step 4: Add Authentication Middleware (First Attempt)
 
-- [ ] Create middleware that checks if user is admin
-- [ ] Apply it to the protected endpoint
-- [ ] **Problem**: There's no way to identify the user from the request! We need some way to know who they are.
+- [x] Create middleware that checks if user is admin
+- [x] Apply it to the protected endpoint
+- [x] **Problem**: There's no way to identify the user from the request! We need some way to know who they are.
 
 ### Step 5: Introduce User Secrets
 
