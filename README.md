@@ -68,28 +68,28 @@ This assignment builds a **single application** that you'll develop incrementall
 - [x] Add Swagger/OpenAPI documentation for both endpoints
 - [x] Serve interactive docs at `/api-docs`
 - [x] Document request/response schemas
-- [ ] Test both endpoints through Swagger UI
+- [x] Test both endpoints through Swagger UI
 
 ### Step 3: Create User System
 
-- [ ] Create an in-memory list of users with different roles:
+- [x] Create an in-memory list of users with different roles:
   ```javascript
   const users = [
     { id: 1, username: "admin", password: "admin123", role: "admin" },
     { id: 2, username: "user", password: "user123", role: "basic" },
   ];
   ```
-- [ ] **Problem**: How do we know which user is making the request to `/api/protected`?
+- [x] **Problem**: How do we know which user is making the request to `/api/protected`?
 
 ### Step 4: Add Authentication Middleware (First Attempt)
 
-- [ ] Create middleware that checks if user is admin
-- [ ] Apply it to the protected endpoint
-- [ ] **Problem**: There's no way to identify the user from the request! We need some way to know who they are.
+- [x] Create middleware that checks if user is admin
+- [x] Apply it to the protected endpoint
+- [x] **Problem**: There's no way to identify the user from the request! We need some way to know who they are.
 
 ### Step 5: Introduce User Secrets
 
-- [ ] Give each user a unique SECRET:
+- [x] Give each user a unique SECRET:
   ```javascript
   const users = [
     {
@@ -108,11 +108,11 @@ This assignment builds a **single application** that you'll develop incrementall
     },
   ];
   ```
-- [ ] Update middleware to check for secret in:
-  - [ ] `Authorization` header: `Bearer admin-secret-123`
+- [x] Update middleware to check for secret in:
+  - [x] `Authorization` header: `Bearer admin-secret-123`
   - [ ] OR Cookie: `secret=admin-secret-123`
-- [ ] Find user by secret, check if role is "admin"
-- [ ] **Success**: Now the protected endpoint actually works!
+- [x] Find user by secret, check if role is "admin"
+- [x] **Success**: Now the protected endpoint actually works!
 
 ### Step 6: Realize the Problems with Secrets
 
@@ -127,18 +127,18 @@ Discuss these security issues:
 
 ### Step 7: Learn About JWTs
 
-- [ ] Read about JWT structure (header.payload.signature)
-- [ ] Understand signing vs verification
-- [ ] Learn about expiry (`exp` claim)
-- [ ] Practice signing and decoding JWTs manually
+- [x] Read about JWT structure (header.payload.signature)
+- [x] Understand signing vs verification
+- [x] Learn about expiry (`exp` claim)
+- [x] Practice signing and decoding JWTs manually
 
 ### Step 8: Implement JWT System
 
-- [ ] Install JWT library (`jsonwebtoken` or `jose`)
-- [ ] Create functions to:
-  - [ ] Sign JWTs with user info and expiration
-  - [ ] Verify and decode JWTs
-  - [ ] Handle expired tokens
+- [x] Install JWT library (`jsonwebtoken` or `jose`)
+- [x] Create functions to:
+  - [x] Sign JWTs with user info and expiration
+  - [x] Verify and decode JWTs
+  - [x] Handle expired tokens
 
 ### Step 9: Create Login Endpoint
 

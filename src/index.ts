@@ -1,57 +1,79 @@
-import { Elysia } from "elysia";
+import { Elysia, status } from "elysia";
 import { swagger } from '@elysiajs/swagger'
+import { jwt } from '@elysiajs/jwt'
+
+const users = [
+  {
+    id: 1,
+    username: "andrei",
+    password: "admin123",
+    role: "admin",
+  },
+  {
+    id: 2,
+    username: "rando",
+    password: "user123",
+    role: "basic",
+  },
+];
+
+const protectedRoutes = new Elysia()
+  .use(jwt({
+    name:'jwt',
+    secret: process.env.JWT_SECRET!,
+    exp: '7d'
+  }))
+
+  .get('/sign/:username', async ({ jwt, params: { username }, cookie: { auth } }) => {
+    const value = await jwt.sign({ username })
+
+    auth.set({
+      value,
+      httpOnly: true,
+      path: '/profile',
+    })
+
+    return `Sign in as ${value}`
+  })
+
+  .get('/profile', async ({ jwt, status, cookie: { auth } }) => {
+    const profile = await jwt.verify(auth.value) // returns null if expired!
+
+    console.log(JSON.stringify(profile));
+
+    if (profile === false) {
+      return status(401, "Unauthorized: Invalid or expired token.")
+    }
+
+    const foundUser = users.filter((user) => {
+      return user.username === profile.username
+    })
+
+    if (foundUser.length === 0) {
+      return status(401, "Unauthorized: User not found.")
+    }
+
+    if (foundUser[0].role === 'admin') {
+      return `Hello ${foundUser[0].username}, an admin!`
+    } else {
+      return status(401, 'Unauthorized: You are not an admin.')
+    }
+})
 
 const app = new Elysia()
-
-app.use(swagger({
+  .use(swagger({
     documentation: {
       info: {
-        title: 'Test Elysia DB Documentation',
+        title: 'Learning Elysia Auth API Documentation',
         version: ""
       },
-      tags: [
-        {name: 'app', description: 'general endpoints'},
-        {name: 'public', description: 'public endpoints'},
-        {name: 'protected', description: 'private endpoints'}
-      ],
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT'
-          }
-        }
-      }
     },
     path: '/api-docs'
   }))
 
-app.get("/", () => "Hello Elysia", {
-  detail: {
-    tags: ['app']
-  }
-})
-  
-app.get('/api/public', () => { return {
-    message: "this is public information"
-    }
-  }, {
-    detail: {
-      tags: ['public']
-    }
-  })
+  .use(protectedRoutes)
 
-app.get('/api/protected', () => { return {
-    message: "only admin should be able to see this"
-    } 
-  }, {
-    detail: {
-      tags: ['protected']
-    }
-  })
-
-app.listen(3000);
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port} aka http://localhost:${app.server?.port}`
-);
+  .listen(3000);
+    console.log(
+      `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port} aka http://localhost:${app.server?.port}`
+    );
