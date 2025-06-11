@@ -68,7 +68,7 @@ This assignment builds a **single application** that you'll develop incrementall
 - [x] Add Swagger/OpenAPI documentation for both endpoints
 - [x] Serve interactive docs at `/api-docs`
 - [x] Document request/response schemas
-- [ ] Test both endpoints through Swagger UI
+- [x] Test both endpoints through Swagger UI
 
 ### Step 3: Create User System
 
@@ -89,7 +89,7 @@ This assignment builds a **single application** that you'll develop incrementall
 
 ### Step 5: Introduce User Secrets
 
-- [ ] Give each user a unique SECRET:
+- [x] Give each user a unique SECRET:
   ```javascript
   const users = [
     {
@@ -108,11 +108,11 @@ This assignment builds a **single application** that you'll develop incrementall
     },
   ];
   ```
-- [ ] Update middleware to check for secret in:
-  - [ ] `Authorization` header: `Bearer admin-secret-123`
+- [x] Update middleware to check for secret in:
+  - [x] `Authorization` header: `Bearer admin-secret-123`
   - [ ] OR Cookie: `secret=admin-secret-123`
-- [ ] Find user by secret, check if role is "admin"
-- [ ] **Success**: Now the protected endpoint actually works!
+- [x] Find user by secret, check if role is "admin"
+- [x] **Success**: Now the protected endpoint actually works!
 
 ### Step 6: Realize the Problems with Secrets
 

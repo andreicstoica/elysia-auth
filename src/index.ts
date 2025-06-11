@@ -1,41 +1,45 @@
 import { Elysia, status } from "elysia";
 import { swagger } from '@elysiajs/swagger'
-import { password } from "bun";
 
-const users = [
-  { id: 1, username: "admin", password: "admin123", role: "admin" },
-  { id: 2, username: "user", password: "user123", role: "basic" },
-];
+  const users = [
+    {
+      id: 1,
+      username: "admin",
+      password: "admin123",
+      role: "admin",
+      secret: "admin-secret-123",
+    },
+    {
+      id: 2,
+      username: "user",
+      password: "user123",
+      role: "basic",
+      secret: "user-secret-456",
+    },
+  ];
 
 const protectedRoutes = new Elysia()
-  .derive((request) => {
-    const authenticatedUser = users.find(
-      (user) =>
-        user.username === request.headers.username &&
-        user.password === request.headers.password
+  .derive(request => {
+    const authenticatedUser = users.find((user) => 
+      user.secret === request.headers.bearer 
     );
 
     return { authenticatedUser: authenticatedUser }
   })
 
-  .onBeforeHandle((request) => {
+  .onBeforeHandle(request => {
     const authenticatedUser = request.authenticatedUser
 
     if (!authenticatedUser) {
-      return status(401); // Unauthorized
+      return status(401); // Unauthorized, no authenticated user
     }
 
     const isAdmin = authenticatedUser.role === 'admin';
 
     if (!isAdmin) {
       console.log('User is not an admin');
-      return status(401); // Unauthorized
+      return status(401); // Unauthorized, not admin
     }
-
-  })
-  
-  .get('/protected', () => {
-    return { message: 'access granted!'}
   })
 
   .get('protected-with-context', ({authenticatedUser}) => {
@@ -46,27 +50,13 @@ const app = new Elysia()
   .use(swagger({
     documentation: {
       info: {
-        title: 'Test Elysia DB Documentation',
+        title: 'Learning Elysia Auth API Documentation',
         version: ""
       },
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT'
-          }
-        }
-      }
     },
     path: '/api-docs'
   }))
 
-  .get("/", () => "Hello Elysia", {
-      detail: {
-        tags: ['app']
-      }
-    })
   .use(protectedRoutes)
 
   .listen(3000);
