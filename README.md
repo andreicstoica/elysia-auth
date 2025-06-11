@@ -1,3 +1,23 @@
+# Elysia with Bun runtime
+
+## Getting Started
+
+To get started with this template, simply paste this command into your terminal:
+
+```bash
+bun create elysia ./elysia-example
+```
+
+## Development
+
+To start the development server run:
+
+```bash
+bun run dev
+```
+
+Open http://localhost:3000/ with your browser to see the result.
+
 # Authentication & API Development (3 days)
 
 ## Reading
@@ -10,8 +30,6 @@
 
 You will implement (3x) email/password authentication using firebase, Cookies and JWT, and Clerk. Additionally, you'll create authenticated API endpoints using the Vercel AI SDK (or similar) and document them with OpenAPI specifications.
 [Please read the Copenhagen book.](https://thecopenhagenbook.com/)
-
-also maybe watch this [100 sec primer](https://www.youtube.com/watch?v=UBUNrFtufWo) on auth
 
 ## Core Concepts
 
