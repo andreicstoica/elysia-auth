@@ -1,63 +1,93 @@
-import { Elysia, status } from "elysia";
+import { Elysia, status, t } from "elysia";
 import { swagger } from '@elysiajs/swagger'
 import { jwt } from '@elysiajs/jwt'
 
-const users = [
-  {
-    id: 1,
-    username: "andrei",
-    password: "admin123",
-    role: "admin",
-  },
-  {
-    id: 2,
-    username: "rando",
-    password: "user123",
-    role: "basic",
-  },
-];
+import { findUser } from './utils/findUser'
+import cors from "@elysiajs/cors";
+import cookie from "@elysiajs/cookie";
 
-const protectedRoutes = new Elysia()
+const login = new Elysia()
   .use(jwt({
     name:'jwt',
     secret: process.env.JWT_SECRET!,
-    exp: '7d'
   }))
 
-  .get('/sign/:username', async ({ jwt, params: { username }, cookie: { auth } }) => {
-    const value = await jwt.sign({ username })
+  .post('/api/login', async ({ body, jwt, cookie }) => {
+    const { username, password } = body 
 
-    auth.set({
-      value,
-      httpOnly: true,
-      path: '/profile',
+    console.log(`attempting login for: ${username}`)
+    console.log('Request body:', body)
+    
+    const foundUser = findUser(username)
+
+    if (!foundUser) {
+      return status(401, 'Unauthorized: No user found.')
+    } 
+    if ( foundUser.password !== password) {
+      return status(401, "Unauthorized: Password incorrect.")
+    } 
+
+    const jwtToken = await jwt.sign({ 
+      id: foundUser.id,
+      username: foundUser.username, 
+      role: foundUser.role,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7), // 1 week from now
     })
 
-    return `Sign in as ${value}`
+    console.log('created jwt token');
+
+    cookie.authToken.set({
+      value: jwtToken,
+      httpOnly: true,
+      secure: false, // only for dev, true in prod,
+      sameSite: 'lax',
+      maxAge: (60 * 60 * 24 * 7),
+      path: '/'
+    })
+
+    console.log('cookie auth set');
+
+    return `Login successful for ${username}, ${foundUser.role}`
+  },
+  {
+    body: t.Object({
+      username: t.String(),
+      password: t.String(),
+    })
   })
 
-  .get('/profile', async ({ jwt, status, cookie: { auth } }) => {
-    const profile = await jwt.verify(auth.value) // returns null if expired!
+  .get('/profile', async ({ jwt, cookie }) => {
+    console.log('protected profile route accessed');
+    const authToken = cookie.authToken.value
+    console.log('Auth token received:', authToken ? 'Present' : 'Missing');
 
-    console.log(JSON.stringify(profile));
-
-    if (profile === false) {
-      return status(401, "Unauthorized: Invalid or expired token.")
+    if (!authToken) {
+      return status(401, 'Auth required. Please login first.')
     }
 
-    const foundUser = users.filter((user) => {
-      return user.username === profile.username
-    })
+    try {
+      const payload = await jwt.verify(authToken)
 
-    if (foundUser.length === 0) {
-      return status(401, "Unauthorized: User not found.")
-    }
+      if (!payload) {
+        return status(401, "Unauthorized: Invalid or expired token.")
+      }
 
-    if (foundUser[0].role === 'admin') {
-      return `Hello ${foundUser[0].username}, an admin!`
-    } else {
+      const foundUser = findUser(payload.username as string)
+
+      if (!foundUser) {
+        cookie.authToken.remove()
+        return status(401, "Unauthorized: User not found Please log in again.")
+      }
+      if (foundUser.role === 'admin') {
+        return `Hello ${foundUser.username}, an admin!`
+      } 
+      
       return status(401, 'Unauthorized: You are not an admin.')
-    }
+      } 
+      catch (error) {
+        cookie.authToken.remove()
+        return status(401, 'Token verification failed. Please login again.')
+      }
 })
 
 const app = new Elysia()
@@ -71,9 +101,23 @@ const app = new Elysia()
     path: '/api-docs'
   }))
 
-  .use(protectedRoutes)
+  .use(cors({
+    origin: true,
+    credentials:true
+  }))
+
+  .use(cookie({
+    secret: process.env.JWT_SECRET,
+    httpOnly: true,
+    secure: false, // set to true only in prod with HTTPS
+    sameSite: "lax",
+  }))
+
+  app.get('/', () => "hello elysia's world!!!")
+
+  .use(login)
 
   .listen(3000);
     console.log(
-      `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port} aka http://localhost:${app.server?.port}`
+      `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`
     );
