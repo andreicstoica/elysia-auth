@@ -1,50 +1,60 @@
 import { Elysia, status } from "elysia";
 import { swagger } from '@elysiajs/swagger'
+import { jwt } from '@elysiajs/jwt'
 
-  const users = [
-    {
-      id: 1,
-      username: "admin",
-      password: "admin123",
-      role: "admin",
-      secret: "admin-secret-123",
-    },
-    {
-      id: 2,
-      username: "user",
-      password: "user123",
-      role: "basic",
-      secret: "user-secret-456",
-    },
-  ];
+const users = [
+  {
+    id: 1,
+    username: "andrei",
+    password: "admin123",
+    role: "admin",
+  },
+  {
+    id: 2,
+    username: "rando",
+    password: "user123",
+    role: "basic",
+  },
+];
 
 const protectedRoutes = new Elysia()
-  .derive(request => {
-    const authenticatedUser = users.find((user) => 
-      user.secret === request.headers.bearer 
-    );
+  .use(jwt({
+    name: 'jwt',
+    secret: 'andrew paris and eugene r my senpais',
+    exp: '1d'
+  }))
 
-    return { authenticatedUser: authenticatedUser }
+  .get('/sign/:username', async ({ jwt, params: { username }, cookie: { auth } }) => {
+    const value = await jwt.sign({ username })
+
+    auth.set({
+      value,
+      httpOnly: true,
+      path: '/profile'
+    })
+
+    return `Sign in as ${value}`
   })
 
-  .onBeforeHandle(request => {
-    const authenticatedUser = request.authenticatedUser
+  .get('/profile', async ({ jwt, status, cookie: { auth } }) => {
+    const profile = await jwt.verify(auth.value)
 
-    if (!authenticatedUser) {
-      return status(401); // Unauthorized, no authenticated user
+    if (!profile) {
+      return status(401)
     }
 
-    const isAdmin = authenticatedUser.role === 'admin';
+    const foundUser = users.filter((user) => {
+      return user.username === profile.username
+    })
 
-    if (!isAdmin) {
-      console.log('User is not an admin');
-      return status(401); // Unauthorized, not admin
+    if (foundUser[0].role === 'admin') {
+      return `Hello ${foundUser[0].username}, an admin!`
+    } else {
+      return status(401)
     }
-  })
+})
 
-  .get('protected-with-context', ({authenticatedUser}) => {
-    return { message: 'access granted!', user: authenticatedUser?.username }
-  })
+
 
 const app = new Elysia()
   .use(swagger({
