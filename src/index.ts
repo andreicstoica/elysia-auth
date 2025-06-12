@@ -1,170 +1,24 @@
-import { type Context, Elysia, status, t } from "elysia";
+import { Elysia, status, t } from "elysia";
 import { swagger } from '@elysiajs/swagger'
 import { jwt } from '@elysiajs/jwt'
+
+import { findUser } from './utils/findUser'
 import cors from "@elysiajs/cors";
 import cookie from "@elysiajs/cookie";
 
-import { findUser } from './utils/findUser'
-import type { User } from './db/users'
-
-const auth = new Elysia()
-  .use(jwt({
-    name:'jwt',
-    secret: process.env.JWT_SECRET!,
-  }))
-
-  .post('/api/login', async ({ body, jwt, cookie }) => {
-    const { username, password } = body 
-
-    console.log(`attempting login for: ${username}`)
-    console.log('Request body:', body)
-    
-    const foundUser = findUser(username)
-
-    if (!foundUser) {
-      return status(401, 'Unauthorized: No user found.')
-    } 
-    if ( foundUser.password !== password) {
-      return status(401, "Unauthorized: Password incorrect.")
-    } 
-
-    const jwtToken = await jwt.sign({ 
-      id: foundUser.id,
-      username: foundUser.username, 
-      role: foundUser.role,
-      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7), // 1 week from now
-    })
-
-    console.log('created jwt token');
-
-    cookie.authToken.set({
-      value: jwtToken,
-      httpOnly: true,
-      secure: false, // only for dev, true in prod,
-      sameSite: 'lax',
-      maxAge: (60 * 60 * 24 * 7),
-      path: '/'
-    })
-
-    console.log('cookie auth set');
-
-    return `Login successful for ${username}, ${foundUser.role}`
-  },
-  {
-    body: t.Object({
-      username: t.String(),
-      password: t.String(),
-    })
-  })
-
-  .post('/api/logout', ({ cookie }) => {
-    console.log('logout requested')
-    cookie.authToken.remove()
-
-    return 'Logout successful'
-  })
-
-  .onError(({code, error}) => {
-    console.log('ERROR', code, error)
-
-    if (code === 'VALIDATION') {
-      return status(400, 'Validation error: Please check your input')
-    }
-
-    if (code === 'NOT_FOUND') {
-      return status(404, 'Route not found')
-    }
-
-    return status(500, 'Internal server error')
-  })
-
-
-// ------------------------ //
-// --- PROTECTED ROUTES --- //
-// ------------------------ //
-
-interface AuthenticatedContext extends Context {
-  user: User;
+type JWTPayload = {
+  id: number;
+  username: string;
+  role: 'admin' | 'basic';
+  exp: number;
 }
-
-const protectedRoutes = new Elysia()
-
-  .use(jwt({
-    name: 'jwt',
-    secret: process.env.JWT_SECRET!,
-  }))
-
-  .use(cookie())
-
-  .decorate('user', null as User | null)
-
-  .onBeforeHandle(async (context) => {
-    console.log(`running auth middleware...`);
-
-    const { jwt, cookie, set } = context as AuthenticatedContext
-    const authToken = cookie.authToken.value
-    console.log('Auth token received:', authToken ? 'Present' : 'Missing');
-
-    if (!authToken) {
-      return status(401, 'Auth required. Please login first.')
-    }
-
-    try {
-      const payload = await jwt.verify(authToken)
-
-      if (!payload) {
-        return status(401, "Unauthorized: Invalid or expired token.")
-      }
-
-      const foundUser = findUser(payload.username as string)
-
-      if (!foundUser) {
-        cookie.authToken.remove()
-        return status(401, "Unauthorized: User not found Please log in again.")
-      }
-
-      context.user = foundUser;
-
-      (set as any).request.user = foundUser
-
-      if (foundUser.role === 'admin') {
-        return `Hello ${foundUser.username}, an admin!`
-      } 
-      
-      return status(401, 'Unauthorized: You are not an admin.')
-      } 
-      catch (error) {
-        cookie.authToken.remove()
-        return status(401, 'Token verification failed. Please login again.')
-      }
-  })
-
-  .get('/profile', ({ user }) => {
-    if (user?.role === 'admin') {
-      return `Hello ${user.username}, an admin! Accessed via protected route`
-    }
-
-    return status(403, 'Forbidden: you are not an admin.')
-  })
-
-  .get('/api/chat', ({ user }) => {
-    return `Hi ${user?.username}, you are at chat endpoint and authenticated`
-  })
-
-  .get('/api/chat/history', ({ user }) => {
-    return `chat history`
-  })
-
-  .delete('/api/chat/history', () => {
-    return `still need to implement chat history deletion lol`
-  })
 
 const app = new Elysia()
   .use(swagger({
     documentation: {
       info: {
         title: 'Learning Elysia Auth API Documentation',
-        version: ""
+        version: "1.0.0"
       },
     },
     path: '/api-docs'
@@ -182,11 +36,119 @@ const app = new Elysia()
     sameSite: "lax",
   }))
 
-  .get('/', () => "Hello Elysia's world!")
+  .get('/', () => "hello elysia's world!!! any1 can access B^)")
 
-  .use(auth)
-  .use(protectedRoutes)
+  .group('/api', (authRoutes) => 
+    authRoutes
 
+      .use(jwt({
+        name:'jwt',
+        secret: process.env.JWT_SECRET!,
+      }))
+
+      .post('/login', async ({ body, jwt, cookie }) => {
+        const { username, password } = body 
+
+        console.log(`attempting login for: ${username}`)
+        console.log('Request body:', body)
+        
+        const foundUser = findUser(username)
+        if (!foundUser) {
+          return status(401, 'Unauthorized: No user found.')
+        } 
+        if ( foundUser.password !== password) {
+          return status(401, "Unauthorized: Password incorrect.")
+        } 
+
+        const jwtToken = await jwt.sign({ 
+          id: foundUser.id,
+          username: foundUser.username, 
+          role: foundUser.role,
+          exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7), // 1 week from now
+        } satisfies JWTPayload) // new syntax!
+
+        console.log('created jwt token');
+
+        cookie.authToken.set({
+          value: jwtToken,
+          httpOnly: true,
+          secure: false, // only for dev, true in prod,
+          sameSite: 'lax',
+          maxAge: (60 * 60 * 24 * 7),
+          path: '/'
+        })
+
+        console.log('cookie auth set');
+
+        return `Login successful for ${username}, ${foundUser.role}`
+      },
+      {
+        body: t.Object({
+          username: t.String(),
+          password: t.String(),
+        })
+      })
+
+      .derive(async ({ jwt, cookie }) => {
+        console.log('Auth middleware...');
+        const authToken = cookie.authToken.value
+        console.log('Auth token received:', authToken ? 'Present' : 'Missing');
+
+        if (!authToken) {
+          return status(401, 'Auth required. Please login first.')
+        }
+    
+        try {
+          const payload = await jwt.verify(authToken)
+    
+          if (!payload) {
+            cookie.authToken.remove()
+            return status(401, "Unauthorized: Invalid or expired token.")
+          }
+    
+          const foundUser = findUser((payload as JWTPayload).username) // new syntax!
+
+          if (!foundUser) {
+            cookie.authToken.remove()
+            return status(401, "Unauthorized: User not found. Please log in again.")
+          }
+
+          return {
+            user: {
+              id: foundUser.id,
+              username: foundUser.username,
+              role: foundUser.role,
+            },
+          };
+      } catch (error) {
+        status(401);
+        cookie.authToken.remove()
+
+        throw new Error((error as Error ).message || 'Token veri failed.')
+        }
+      })
+
+      .get('/profile', async ({ user }) => {
+        console.log('protected profile route accessed');
+
+        if (!user) {
+          return status(401, 'Access Denied: User context missing')
+        }
+
+        if (user.role === 'admin') {
+          return `Hello ${user.username}, an admin!`
+        }
+
+        return status(403, "Forbidden: You are not an admin.")
+      })
+
+      .get('/chat', async ({ user }) => {
+        return `hello this is chat, only viewable if ur auth B^)`
+      })
+      )
+      // end /api auth group
+
+  // listen main app
   .listen(3000);
     console.log(
       `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`

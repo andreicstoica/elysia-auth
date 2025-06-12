@@ -159,18 +159,18 @@ Discuss these security issues:
 
 ### Step 11: Add More Protected Endpoints
 
-- [ ] `POST /api/chat` - AI chat (requires any authenticated user)
-- [ ] `GET /api/chat/history` - Chat history (requires authentication)
-- [ ] `DELETE /api/chat/history` - Clear history (requires authentication)
-- [ ] Update Swagger with authentication schemes
+- [x] `POST /api/chat` - AI chat (requires any authenticated user)
+- [x] `GET /api/chat/history` - Chat history (requires authentication)
+- [x] `DELETE /api/chat/history` - Clear history (requires authentication)
+- [x] Update Swagger with authentication schemes
 
 ### Step 12: Test the Full Flow
 
-- [ ] Use Swagger UI to:
-  - [ ] Try accessing protected endpoints (should fail)
-  - [ ] Login via `/api/login` endpoint
-  - [ ] Use returned JWT in "Authorize" button
-  - [ ] Access protected endpoints (should work)
+- [x] Use Swagger UI to:
+  - [x] Try accessing protected endpoints (should fail)
+  - [x] Login via `/api/login` endpoint
+  - [x] Use returned JWT in "Authorize" button
+  - [x] Access protected endpoints (should work)
 
 ### Step 13: Professional Implementation with Better Auth
 
